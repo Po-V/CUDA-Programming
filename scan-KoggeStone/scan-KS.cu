@@ -12,7 +12,7 @@ __global__ void scan_kernel_improved(float* input, float* output, float* partial
     // there are 2 segments, block segment and thread segment
 
     // to determine where the segment starts
-    unsigned int bSegment = BLOCK_DIM*COARSE_FACTOR*blockIdx.x;
+    unsigned int bSegment = BLOCK_DIM*COARSE_FACTOR*blockIdx.x; // total number of elements in array processed by block
 
     __shared__ float buffer_s[BLOCK_DIM*COARSE_FACTOR];
     // load the entire block segment to shared memory
@@ -171,52 +171,5 @@ int main() {
 
     return 0;
 }
-
-
-
-int main() {
-    // Input size (for example, 1 million elements)
-    unsigned int N = 1 << 10;
-    size_t size = N * sizeof(float);
-
-    // Host input and output arrays
-    std::vector<float> h_input(N, 1.0f); // Initialize with 1 for simplicity
-    std::vector<float> h_output(N, 0.0f);
-
-    // Device input, output, and partial sum arrays
-    float *d_input, *d_output, *d_partialSum;
-    cudaMalloc(&d_input, size);
-    cudaMalloc(&d_output, size);
-    cudaMalloc(&d_partialSum, (N / (BLOCK_DIM * COARSE_FACTOR)) * sizeof(float));
-
-    // Copy data to device
-    cudaMemcpy(d_input, h_input.data(), size, cudaMemcpyHostToDevice);
-
-    // Launch scan kernel
-    unsigned int numBlocks = (N + BLOCK_DIM * COARSE_FACTOR - 1) / (BLOCK_DIM * COARSE_FACTOR);
-    scan_kernel_improved<<<numBlocks, BLOCK_DIM>>>(d_input, d_output, d_partialSum, N);
-
-    // Launch add kernel
-    add_kernel<<<numBlocks, BLOCK_DIM>>>(d_output, d_partialSum, N);
-
-    // Copy results back to host
-    cudaMemcpy(h_output.data(), d_output, size, cudaMemcpyDeviceToHost);
-
-    // Verify the result (print the first few elements)
-    for (int i = 0; i < 10; i++) {
-        std::cout << h_output[i] << " ";
-    }
-    std::cout << std::endl;
-
-    // Free device memory
-    cudaFree(d_input);
-    cudaFree(d_output);
-    cudaFree(d_partialSum);
-
-    return 0;
-}
-
-
-
 
 
