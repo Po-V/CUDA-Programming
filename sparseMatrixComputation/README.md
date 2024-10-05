@@ -27,13 +27,13 @@ To compile and run the program, use the following commands:
 
 1. **Navigate to the subfolder**:
    ```bash
-   cd scan-KoggeStone
+   cd sparseMatrixComputation
 
 2. **Compile the CUDA program**:
    ```bash
-   nvcc scan-KS.cu -o ks
+   nvcc spmv-coo.cu -o coo
 
 3. **Run the compiled program**:
    ```bash
-   ./ks
+   ./coo
 
