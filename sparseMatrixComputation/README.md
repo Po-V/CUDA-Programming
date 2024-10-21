@@ -32,6 +32,16 @@ Ensure that the CUDA environment is correctly set up and your GPU drivers are in
     - The `spmv_csr_gpu` is then called to allocate memory on GPU using `cudaMalloc` and call the `spmv_csr_kernel`.
     - After kernel execution and verifying the results, the device and host memory is freed.
 
+### `spmv_ellpack.cu`
+
+- **Ellpack kernel**:
+    -  The `spmv_ell_kernel` implement Sparse Matrix-Vector Multiplication on GPU using ELLPACK format where each row is padded to a uniform length for parallel processing. It transfers the parse matrix and input vector to the GPU, launches a CUDA kernel to compute the result and copies the output back to the host. The kernel computes each row's dot product of non-zero matrix elements with corresponding elements in the input vector.
+
+- **Main Function**:
+    - `Malloc` allocates memory for non-zero elements in sparse matrix, a vector of ones and output vector.
+    - The `spmv_ell_gpu` is then called to allocate memory on GPU using `cudaMalloc` and call the `spmv_ell_kernel`.
+    - After kernel execution and verifying the results, the device and host memory is freed.
+
 ## Compilation and Execution
 
 To compile and run the coo example, use the following commands:
