@@ -29,6 +29,19 @@ Ensure that the CUDA environment is correctly set up and your GPU drivers are in
     - In this kernel, each thread only processes vertices that are already in previous BFS level `(level[vertex] == currLevel -1)`. It checks each neighbor and marks any unvisited neighbor as part of current BFS level. Here threads are responsible for expanding the search only from vertices found at previous level. 
     - Kernel in `bfs_csr_v2.cu` is more efficient for sparse graphs as only vertices with an established connection to current frontier (previous level) attempt to visit new neighbors while in the original implementation, each univisited vertex is checked, regardless of whether it has any connection to previous level.
 
+### `bfs_csr_v3.cu`
+
+- **bfs topdown kernel**:
+    - In top-down BFS, the search is initiated from vertices known to be on the current frontier level and spreads to their neighbors. The kernel iterates over each vertex, and if its in the previous BFS level `(level[vertex] == currLevel -1)`, it checks all its neighbors. Unvisited neighbors `(level[neighbor] == UINT_MAX)` are added to current level, expanding the frontier for next BFS level.
+
+- **bfs bottomup kernel**:
+    - In bottom-up BFS, each thread is responsible for an unvisited vertex and it checks each neighbor to see if any are in previous BFS level. If such neighbor is found, the current vertex is marked as part of current level. 
+
+- **bfs_gpu**:
+    - For first level, the `bfs_topdown_kernel` is launched. The choice is because the initial BFS frontier is typically small, focusing the search on vertices near the source. Top-down is more efficient here since it avoids unnecessary checks on non-frontier vertices.
+    - For levels greater than 1, `bfs_bottomup_kernel` is used. As BFS progresses, the frontier expands significantly. Using the bottom-up approach can reduce work by having unvisited vertices actively look for connections to the BFS frontier which is more efficient when frontier covers large part of graph.
+
+
 ### `bfs_coo.cu`
 
 - **bfs kernel**: 
