@@ -22,6 +22,12 @@ Ensure that the CUDA environment is correctly set up and your GPU drivers are in
     - The kernel loop in `bfs_gpu` is responsible for managing multiple BFS levels, calling CUDA kernel to process each level and stop the traversal of graph when no new vertices were discovered in current level of traversal. 
     - After kernel execution and verifying the results, the device and host memory is freed.
 
+### `bfs_csr_v2.cu`
+
+- **bfs kernel**:
+    - In the first version of bfs kernel above, each thread is responsible for checking its assigned vertex if it has not been visited `(level[vertex] == UINT_MAX)`. The neighbors are only checked if this condition is met. This approach lets threads independently look for new vertices to add to current BFS level by starting with unvisited vertices. 
+    - In this kernel, each thread only processes vertices that are already in previous BFS level `(level[vertex] == currLevel -1)`. It checks each neighbor and marks any unvisited neighbor as part of current BFS level. Here threads are responsible for expanding the search only from vertices found at previous level. 
+    - Kernel in `bfs_csr_v2.cu` is more efficient for sparse graphs as only vertices with an established connection to current frontier (previous level) attempt to visit new neighbors while in the original implementation, each univisited vertex is checked, regardless of whether it has any connection to previous level.
 
 ### `bfs_coo.cu`
 
