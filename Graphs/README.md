@@ -41,6 +41,13 @@ Ensure that the CUDA environment is correctly set up and your GPU drivers are in
     - For first level, the `bfs_topdown_kernel` is launched. The choice is because the initial BFS frontier is typically small, focusing the search on vertices near the source. Top-down is more efficient here since it avoids unnecessary checks on non-frontier vertices.
     - For levels greater than 1, `bfs_bottomup_kernel` is used. As BFS progresses, the frontier expands significantly. Using the bottom-up approach can reduce work by having unvisited vertices actively look for connections to the BFS frontier which is more efficient when frontier covers large part of graph.
 
+### `bfs_csr_frontier.cu`
+
+- **bfs_kernel**:
+    - The kernel uses a 2-level frontier queuing strategy with local (shared memory) queue and global (device memory) queue. Each thread block has shared memory array `currFrontier_s` of size `LOCAL_QUEUE_SIZE` to store vertices in current frontier found by threads within the same block. A shared variable `numCurrFrontier_s` tracks the number of vertices added to this local queue. Threads within the block use this shared memory to accumulate neighbors efficiently, avoiding global memory until local queue fills up.
+    - Each thread processes a vertex from previous frontier `prevFrontier`, checking its neighbors in CSR graph structure. If a neigbor is univisited `(level[neighbor] == UINT_MAX)`, it is marked with the current BFS level and added to the local queue. To avoid race conditions, threafs use atomic operations on `numCurrFrontier_s` (tracking the local queue size).
+    - If `currFrontier_s` overflows neighbors are added to `currFrontier` in global memory instead. At end of processing, a single thread reserves space in `currFrontier` for local queue elements using `atomicAdd`. The block then synchronizes, and each thread copies its portion of `currFrontier_s` to reserved space in `currFrontier`.
+    - This reduces atomic operations on global memory and minimizes global memory access by utilizing shared memory. 
 
 ### `bfs_coo.cu`
 
